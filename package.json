@@ -1,0 +1,23 @@
+{
+  "name": "tenderness",
+  "version": "1.0.0",
+  "description": "Tenderness world",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js | ./node_modules/.bin/bunyan",
+    "demonize": "nodemon --exec 'node app.js | ./node_modules/.bin/bunyan'"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bunyan": "^1.8.12",
+    "dotenv": "^4.0.0",
+    "lodash": "^4.17.5",
+    "node-agent-sdk": "^0.3.0"
+  },
+  "devDependencies": {
+    "eslint": "^4.15.0",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-import": "^2.8.0"
+  }
+}
