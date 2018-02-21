@@ -5,7 +5,7 @@ const lodash = require('lodash');
 const Agent = require('./megaAgent');
 const tendernessBots = require('./config/tendernesBots');
 
-const echoAgent = new Agent({
+const megaAgent = new Agent({
   accountId: process.env.LP_ACCOUNT_ID,
   username: process.env.LP_USER_NAME,
   appKey: process.env.LP_AGENT_APP_KEY,
@@ -14,10 +14,10 @@ const echoAgent = new Agent({
   accessTokenSecret: process.env.LP_AGENT_ACCESS_TOKEN_SECRET,
 });
 
-echoAgent.on('MegaAgent.ContentEvent', (contentEvent) => {
+megaAgent.on('MegaAgent.ContentEvent', (contentEvent) => {
   log.info('Content Event', contentEvent);
   if (lodash.isString(contentEvent.message) && contentEvent.message.startsWith('#close')) {
-    echoAgent.updateConversationField({
+    megaAgent.updateConversationField({
       conversationId: contentEvent.dialogId,
       conversationField: [{
         field: 'ConversationStateField',
@@ -26,7 +26,7 @@ echoAgent.on('MegaAgent.ContentEvent', (contentEvent) => {
     });
   } else if (lodash.isString(contentEvent.message) && contentEvent.message.startsWith('#transferToSampleBot')) {
     log.info('Change bot to Sample Bot');
-    echoAgent.updateConversationField({
+    megaAgent.updateConversationField({
       conversationId: contentEvent.dialogId,
       conversationField: [
         {
@@ -42,7 +42,7 @@ echoAgent.on('MegaAgent.ContentEvent', (contentEvent) => {
       ],
     });
   } else {
-    echoAgent.publishEvent({
+    megaAgent.publishEvent({
       dialogId: contentEvent.dialogId,
       event: {
         type: 'ContentEvent',
