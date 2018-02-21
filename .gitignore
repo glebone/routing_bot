@@ -84,3 +84,4 @@ nodemon.json
 var/*
 
 secret.yaml
+secrets.yaml
