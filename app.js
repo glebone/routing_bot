@@ -34,7 +34,7 @@ megaAgent.on('MegaAgent.ContentEvent', (contentEvent) => {
         conversationState: 'CLOSE',
       }],
     );
-  } else if (lodash.isString(contentEvent.message) && contentEvent.message.startsWith('#transferToSampleBot')) {
+  } else if (lodash.isString(contentEvent.message) && contentEvent.message.startsWith('#toBot1')) {
     log.info('Change bot to Sample Bot');
     updateConversation(
       contentEvent.dialogId,
@@ -51,13 +51,30 @@ megaAgent.on('MegaAgent.ContentEvent', (contentEvent) => {
         },
       ],
     );
+  } else if (lodash.isString(contentEvent.message) && contentEvent.message.startsWith('#toBot2')) {
+    log.info('Change bot to Sample Bot');
+    updateConversation(
+      contentEvent.dialogId,
+      [
+        {
+          field: 'ParticipantsChange',
+          type: 'REMOVE',
+          role: 'ASSIGNED_AGENT',
+        },
+        {
+          field: 'Skill',
+          type: 'UPDATE',
+          skill: tendernessBots.sampleBotId2,
+        },
+      ],
+    );
   } else {
     megaAgent.publishEvent({
       dialogId: contentEvent.dialogId,
       event: {
         type: 'ContentEvent',
         contentType: 'text/plain',
-        message: `echo routing_bot: ${contentEvent.message}`,
+        message: `Echo from Router Bot: ${contentEvent.message}`,
       },
     });
     log.info('Publish Event');
