@@ -43,61 +43,65 @@ function updateConversation(dialogId, updates) {
 
 megaAgent.on('MegaAgent.ContentEvent', async (contentEvent) => {
   log.info('Content Event', contentEvent);
-  const DFResponse = await dialogFlowRequest(
-    contentEvent.message,
-    contentEvent.dialogId
-  );
-  if (lodash.isString(contentEvent.message) && contentEvent.message.startsWith('#close')) {
-    updateConversation(
-      contentEvent.dialogId,
-      [{
-        field: 'ConversationStateField',
-        conversationState: 'CLOSE',
-      }],
+  try {
+    const DFResponse = await dialogFlowRequest(
+      contentEvent.message,
+      contentEvent.dialogId
     );
-  } else if (DFResponse.result.action == '#toBot1') {
-    log.info('Change bot to Sample Bot');
-    updateConversation(
-      contentEvent.dialogId,
-      [
-        {
-          field: 'ParticipantsChange',
-          type: 'REMOVE',
-          role: 'ASSIGNED_AGENT',
+    if (lodash.isString(contentEvent.message) && contentEvent.message.startsWith('#close')) {
+      updateConversation(
+        contentEvent.dialogId,
+        [{
+          field: 'ConversationStateField',
+          conversationState: 'CLOSE',
+        }],
+      );
+    } else if (DFResponse.result.action == '#toBot1') {
+      log.info('Change bot to Sample Bot');
+      updateConversation(
+        contentEvent.dialogId,
+        [
+          {
+            field: 'ParticipantsChange',
+            type: 'REMOVE',
+            role: 'ASSIGNED_AGENT',
+          },
+          {
+            field: 'Skill',
+            type: 'UPDATE',
+            skill: tendernessBots.sampleBotId1,
+          },
+        ],
+      );
+    } else if (DFResponse.result.action == '#toBot2') {
+      log.info('Change bot to Sample Bot');
+      updateConversation(
+        contentEvent.dialogId,
+        [
+          {
+            field: 'ParticipantsChange',
+            type: 'REMOVE',
+            role: 'ASSIGNED_AGENT',
+          },
+          {
+            field: 'Skill',
+            type: 'UPDATE',
+            skill: tendernessBots.sampleBotId2,
+          },
+        ],
+      );
+    } else {
+      megaAgent.publishEvent({
+        dialogId: contentEvent.dialogId,
+        event: {
+          type: 'ContentEvent',
+          contentType: 'text/plain',
+          message: `Echo from Router Bot: ${DFResponse.result.fulfillment.speech}`,
         },
-        {
-          field: 'Skill',
-          type: 'UPDATE',
-          skill: tendernessBots.sampleBotId1,
-        },
-      ],
-    );
-  } else if (DFResponse.result.action == '#toBot2') {
-    log.info('Change bot to Sample Bot');
-    updateConversation(
-      contentEvent.dialogId,
-      [
-        {
-          field: 'ParticipantsChange',
-          type: 'REMOVE',
-          role: 'ASSIGNED_AGENT',
-        },
-        {
-          field: 'Skill',
-          type: 'UPDATE',
-          skill: tendernessBots.sampleBotId2,
-        },
-      ],
-    );
-  } else {
-    megaAgent.publishEvent({
-      dialogId: contentEvent.dialogId,
-      event: {
-        type: 'ContentEvent',
-        contentType: 'text/plain',
-        message: `Echo from Router Bot: ${contentEvent.message}`,
-      },
-    });
-    log.info('Publish Event');
+      });
+      log.info('Publish Event');
+    }
+  } catch (err) {
+    consile.log(err);
   }
 });
