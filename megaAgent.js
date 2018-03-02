@@ -163,6 +163,24 @@ class MegaAgent extends Agent {
             // });
             // const lastMessageStatus = await getLastMessageStatus(change.result.convId);
             // const maxSeq = lastMessageStatus ? lastMessageStatus : 0;
+            // demonstraiton of using the consumer profile calls
+            const consumerId = change.result.conversationDetails.participants.filter(p => p.role === 'CONSUMER')[0].id;
+            let message;
+            try {
+              message = await dialogflow.eventRequest('WELCOME', 123123123);
+            } catch (err) {
+              console.log(err);
+            }
+            this.getUserProfile(consumerId, (e, profileResp) => {
+              this.publishEvent({
+                dialogId: change.result.convId,
+                event: {
+                  type: 'ContentEvent',
+                  contentType: 'text/plain',
+                  message: message.result.fulfillment.speech/* message *//* 'selected tender bot' *//* `Just joined to conversation with ${JSON.stringify(profileResp)}` */,
+                },
+              });
+            });
             this.subscribeMessagingEvents({ fromSeq: 99999999, dialogId: change.result.convId });
           } else if (change.type === 'DELETE') {
             // conversation was closed or transferred
