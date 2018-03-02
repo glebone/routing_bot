@@ -3,7 +3,8 @@ const { log } = require('./config/bunyan');
 const lodash = require('lodash');
 const Agent = require('./megaAgent');
 const tendernessBots = require('./config/tendernesBots');
-const apiai = require('apiai');
+const dialogflow = require('./dialogflow');
+
 
 const megaAgent = new Agent({
   accountId: process.env.LP_ACCOUNT_ID,
@@ -13,23 +14,6 @@ const megaAgent = new Agent({
   accessToken: process.env.LP_AGENT_ACCESS_TOKEN,
   accessTokenSecret: process.env.LP_AGENT_ACCESS_TOKEN_SECRET,
 });
-
-async function dialogFlowRequest(text, messengerUserId) {
-  return new Promise((resolve, reject) => {
-    const apiaiApp = apiai(process.env.DIALOG_FLOW_TOKEN);
-    const request = apiaiApp.textRequest(text, {
-      sessionId: messengerUserId
-    });
-    request.on('response', (response) => {
-      resolve(response);
-    });
-    request.on('error', (error) => {
-      console.log(error);
-      reject(error);
-    });
-    request.end();
-  });
-}
 
 function updateConversation(dialogId, updates) {
   megaAgent.updateConversationField({
@@ -44,7 +28,7 @@ function updateConversation(dialogId, updates) {
 megaAgent.on('MegaAgent.ContentEvent', async (contentEvent) => {
   log.info('Content Event', contentEvent);
   try {
-    const DFResponse = await dialogFlowRequest(
+    const DFResponse = await dialogflow.textRequest(
       contentEvent.message,
       contentEvent.dialogId
     );

@@ -1,6 +1,100 @@
 const { log } = require('./config/bunyan');
 const { Agent } = require('node-agent-sdk');
+const rp = require('request-promise-native');
+const _ = require('lodash');
+const dialogflow = require('./dialogflow');
 
+class TokenDomain {
+  constructor() {
+    const reqData = getTokenAndDomainMsgHist()
+    .then((res) => {
+      this.domain = reqData.domain;
+      this.token = reqData.token;
+    })
+    .catch((err) => {
+      console.log(err);
+    })
+  };
+
+  async getTokenAndDomain(){
+    if (this.token && this.domain) {
+      return { 
+        token: this.token, 
+        domain: this.domain 
+      };
+    } else {
+      const reqData = await getTokenAndDomainMsgHist();
+      this.token = reqData.token;
+      this.domain = reqData.domain;
+      return await this.getTokenAndDomain();
+    }
+  }
+}
+
+const tokenDomain = new TokenDomain();
+
+function getTokenAndDomainMsgHist() {
+  const options = {
+    method: 'POST',
+    uri: `https://va.agentvep.liveperson.net/api/account/${process.env.LP_ACCOUNT_ID}/login?v=1.3`,
+    body: {
+      "username": process.env.LP_USER_NAME,
+      "appKey": process.env.LP_AGENT_APP_KEY,
+      "secret": process.env.LP_AGENT_SECRET,
+      "accessToken": process.env.LP_AGENT_ACCESS_TOKEN,
+      "accessTokenSecret": process.env.LP_AGENT_ACCESS_TOKEN_SECRET,
+    },
+    json: true
+  };
+
+  return rp(options)
+    .then((parsedBody) => {
+      const baseURIelement = parsedBody.csdsCollectionResponse.baseURIs.find((el) => { if (el.service === 'msgHist') return el });
+      return { token: parsedBody.bearer, domain: baseURIelement.baseURI };
+    })
+    .catch((err) => {
+      log.error(err, 'Getting LP token error.');
+    });
+}
+
+async function getConversationsContent(conversationId) {
+  try {
+    // const reqData = await getTokenAndDomainMsgHist();
+    const tD = await tokenDomain.getTokenAndDomain()
+    const options = {
+      method: 'POST',
+      uri: `https://va.msghist.liveperson.net/messaging_history/api/account/${process.env.LP_ACCOUNT_ID}/conversations/conversation/search`,
+      // uri: `https://${reqData.domain}/messaging_history/api/account/${process.env.LP_ACCOUNT_ID}/conversations/conversation/search`,
+      headers: {
+        'Authorization': `Bearer 83811e9aa6ab712b5de87a2b223a3ba7a9e6b5e89de78ffc89040db71e156ba9`,
+        // 'Authorization': `Bearer ${reqData.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: {
+        conversationId: conversationId
+      },
+      json: true // Automatically stringifies the body to JSON
+    };
+    return rp(options);
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+async function getLastMessageStatus(convId) {
+  try {
+    const conversationsContent = await getConversationsContent(convId);
+    if (conversationsContent) {
+      return await _.maxBy(conversationsContent.conversationHistoryRecords['0'].messageStatuses, 
+      (message) => { return message.seq; });
+    } else {
+      return null;
+    }
+  } catch (err) {
+    console.log(err);
+  }
+  
+}
 class MegaAgent extends Agent {
   constructor(conf) {
     super(conf);
@@ -19,6 +113,7 @@ class MegaAgent extends Agent {
       this.subscribeExConversations({
         agentIds: [this.agentId],
         convState: ['OPEN'],
+        //TODO: get convers...
       }, () => log.info('subscribed successfully', this.conf.id || ''));
       this.subscribeRoutingTasks({});
     });
@@ -29,6 +124,7 @@ class MegaAgent extends Agent {
       body.changes.forEach((c) => {
         if (c.type === 'UPSERT') {
           c.result.ringsDetails.forEach((r) => {
+            //TODO: get convers... продебажить тут
             if (r.ringState === 'WAITING') {
               this.updateRingState({
                 ringId: r.ringId,
@@ -42,29 +138,35 @@ class MegaAgent extends Agent {
 
     // Notification on changes in the open consversation list
     this.on('cqm.ExConversationChangeNotification', (notificationBody) => {
-      notificationBody.changes.forEach((change) => {
-        if (change.type === 'UPSERT' && !openConvs[change.result.convId]) {
-          // new conversation for me
-          openConvs[change.result.convId] = {};
-
-          // demonstraiton of using the consumer profile calls
-          // const consumerId =
-          //   change.result.conversationDetails.participants
-          //     .filter(p => p.role === 'CONSUMER')[0].id;
-          // this.getUserProfile(consumerId, (e, profileResp) => {
-          //   this.publishEvent({
-          //     dialogId: change.result.convId,
-          //     event: {
-          //       type: 'ContentEvent',
-          //       contentType: 'text/plain',
-          //       message: `Just joined to conversation with ${JSON.stringify(profileResp)}`,
-          //     },
-          //   });
-          // });
-          this.subscribeMessagingEvents({ dialogId: change.result.convId });
-        } else if (change.type === 'DELETE') {
-          // conversation was closed or transferred
-          delete openConvs[change.result.convId];
+      notificationBody.changes.forEach(async (change) => {
+        try {
+          if (change.type === 'UPSERT' && !openConvs[change.result.convId]) {
+            // new conversation for me
+            openConvs[change.result.convId] = {};
+  
+            // demonstraiton of using the consumer profile calls
+            // const consumerId =
+            //   change.result.conversationDetails.participants
+            //     .filter(p => p.role === 'CONSUMER')[0].id;
+            // this.getUserProfile(consumerId, (e, profileResp) => {
+            //   this.publishEvent({
+            //     dialogId: change.result.convId,
+            //     event: {
+            //       type: 'ContentEvent',
+            //       contentType: 'text/plain',
+            //       message: `Just joined to conversation with ${JSON.stringify(profileResp)}`,
+            //     },
+            //   });
+            // });
+            const lastMessageStatus = await getLastMessageStatus(change.result.convId);
+            const maxSeq = lastMessageStatus ? lastMessageStatus : 0;
+            this.subscribeMessagingEvents({ fromSeq: maxSeq+1, dialogId: change.result.convId });
+          } else if (change.type === 'DELETE') {
+            // conversation was closed or transferred
+            delete openConvs[change.result.convId];
+          }
+        } catch (err) {
+          console.log(err);
         }
       });
     });
