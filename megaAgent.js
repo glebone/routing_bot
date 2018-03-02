@@ -4,34 +4,34 @@ const rp = require('request-promise-native');
 const _ = require('lodash');
 const dialogflow = require('./dialogflow');
 
-class TokenDomain {
-  constructor() {
-    const reqData = getTokenAndDomainMsgHist()
-    .then((res) => {
-      this.domain = reqData.domain;
-      this.token = reqData.token;
-    })
-    .catch((err) => {
-      console.log(err);
-    })
-  };
+// class TokenDomain {
+//   constructor() {
+//     const reqData = getTokenAndDomainMsgHist()
+//     .then((res) => {
+//       this.domain = reqData.domain;
+//       this.token = reqData.token;
+//     })
+//     .catch((err) => {
+//       console.log(err);
+//     })
+//   };
 
-  async getTokenAndDomain(){
-    if (this.token && this.domain) {
-      return { 
-        token: this.token, 
-        domain: this.domain 
-      };
-    } else {
-      const reqData = await getTokenAndDomainMsgHist();
-      this.token = reqData.token;
-      this.domain = reqData.domain;
-      return await this.getTokenAndDomain();
-    }
-  }
-}
+//   async getTokenAndDomain(){
+//     if (this.token && this.domain) {
+//       return { 
+//         token: this.token, 
+//         domain: this.domain 
+//       };
+//     } else {
+//       const reqData = await getTokenAndDomainMsgHist();
+//       this.token = reqData.token;
+//       this.domain = reqData.domain;
+//       return await this.getTokenAndDomain();
+//     }
+//   }
+// }
 
-const tokenDomain = new TokenDomain();
+// const tokenDomain = new TokenDomain();
 
 function getTokenAndDomainMsgHist() {
   const options = {
@@ -57,14 +57,17 @@ function getTokenAndDomainMsgHist() {
     });
 }
 
+let reqData;
+
 async function getConversationsContent(conversationId) {
   try {
-    // const reqData = await getTokenAndDomainMsgHist();
-    const tD = await tokenDomain.getTokenAndDomain()
+    if(!reqData) {
+      reqData = await getTokenAndDomainMsgHist();
+    }
     const options = {
       method: 'POST',
-      uri: `https://va.msghist.liveperson.net/messaging_history/api/account/${process.env.LP_ACCOUNT_ID}/conversations/conversation/search`,
-      // uri: `https://${reqData.domain}/messaging_history/api/account/${process.env.LP_ACCOUNT_ID}/conversations/conversation/search`,
+      // uri: `https://va.msghist.liveperson.net/messaging_history/api/account/${process.env.LP_ACCOUNT_ID}/conversations/conversation/search`,
+      uri: `https://${reqData.domain}/messaging_history/api/account/${process.env.LP_ACCOUNT_ID}/conversations/conversation/search`,
       headers: {
         'Authorization': `Bearer 83811e9aa6ab712b5de87a2b223a3ba7a9e6b5e89de78ffc89040db71e156ba9`,
         // 'Authorization': `Bearer ${reqData.token}`,
@@ -158,9 +161,9 @@ class MegaAgent extends Agent {
             //     },
             //   });
             // });
-            const lastMessageStatus = await getLastMessageStatus(change.result.convId);
-            const maxSeq = lastMessageStatus ? lastMessageStatus : 0;
-            this.subscribeMessagingEvents({ fromSeq: maxSeq+1, dialogId: change.result.convId });
+            // const lastMessageStatus = await getLastMessageStatus(change.result.convId);
+            // const maxSeq = lastMessageStatus ? lastMessageStatus : 0;
+            this.subscribeMessagingEvents({ fromSeq: 99999999, dialogId: change.result.convId });
           } else if (change.type === 'DELETE') {
             // conversation was closed or transferred
             delete openConvs[change.result.convId];
