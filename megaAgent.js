@@ -1,5 +1,6 @@
 const { log } = require('./config/bunyan');
 const { Agent } = require('node-agent-sdk');
+const config = require('./config/config');
 const dialogflow = require('./services/dialogflowService');
 const agentService = require('./services/agentService');
 
@@ -9,7 +10,7 @@ class MegaAgent extends Agent {
     this.conf = conf;
     this.init();
     this.CONTENT_NOTIFICATION = 'MegaAgent.ContentEvent';
-    this.initial = process.env.LP_INITIAL_SKILL_ID;
+    this.initial = config.LP.initialSkillId;
   }
 
   init() {
@@ -58,7 +59,6 @@ class MegaAgent extends Agent {
                 message: message.result.fulfillment.speech,
               },
             });
-            // TODO: Get last Sequinse.
             const lastSeq = await agentService.lastSeq(this.transport.configuration, convId);
             log.info(lastSeq, 'lastSeq');
             this.subscribeMessagingEvents({ fromSeq: lastSeq, dialogId: convId });

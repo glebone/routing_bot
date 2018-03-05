@@ -1,17 +1,18 @@
-require('dotenv').config();
-const { log } = require('./config/bunyan');
+// require('dotenv').config();
 const lodash = require('lodash');
+const config = require('./config/config');
+const { log } = require('./config/bunyan');
 const Agent = require('./megaAgent');
 const tendernessBots = require('./config/tendernesBots');
 const dialogflow = require('./services/dialogflowService');
 
 const megaAgent = new Agent({
-  accountId: process.env.LP_ACCOUNT_ID,
-  username: process.env.LP_USER_NAME,
-  appKey: process.env.LP_AGENT_APP_KEY,
-  secret: process.env.LP_AGENT_SECRET,
-  accessToken: process.env.LP_AGENT_ACCESS_TOKEN,
-  accessTokenSecret: process.env.LP_AGENT_ACCESS_TOKEN_SECRET,
+  accountId: config.LP.accountId,
+  username: config.LP.username,
+  appKey: config.LP.appKey,
+  secret: config.LP.secret,
+  accessToken: config.LP.accessToken,
+  accessTokenSecret: config.LP.accessTokenSecret,
 });
 
 function updateConversation(dialogId, updates) {
@@ -39,6 +40,18 @@ megaAgent.on('MegaAgent.ContentEvent', async (contentEvent) => {
           conversationState: 'CLOSE',
         }],
       );
+    } else if (contentEvent.message.startsWith(config.DIALOG_FLOW.eventSymbol)) {
+      const eventStr = contentEvent.message
+        .substring(config.DIALOG_FLOW.eventSymbol.length, contentEvent.message.length);
+      const event = await dialogflow.eventRequest('WELCOME', eventStr);
+      megaAgent.publishEvent({
+        dialogId: contentEvent.dialogId,
+        event: {
+          type: 'ContentEvent',
+          contentType: 'text/plain',
+          message: `echo tender sample: ${event.result.fulfillment.speech}`,
+        },
+      });
     } else if (DFResponse.result.action === '#toBot1') {
       log.info('Change bot to Sample Bot');
       updateConversation(
