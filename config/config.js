@@ -17,7 +17,7 @@ config.LP = {
 
 config.DIALOG_FLOW = {
   token: process.env.DIALOG_FLOW_TOKEN,
-  eventSymbol: 'xxx',
+  eventSymbol: '#event ',
 };
 
 module.exports = config;
