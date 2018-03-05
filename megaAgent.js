@@ -34,7 +34,19 @@ class MegaAgent extends Agent {
               this.updateRingState({
                 ringId: r.ringId,
                 ringState: 'ACCEPTED',
-              }, (e, resp) => log.info(resp));
+              }, async (e) => {
+                if (e) log.error(e);
+                const convId = r.ringId.split('_')[0];
+                const message = await dialogflow.eventRequest('WELCOME', convId);
+                this.publishEvent({
+                  dialogId: convId,
+                  event: {
+                    type: 'ContentEvent',
+                    contentType: 'text/plain',
+                    message: message.result.fulfillment.speech,
+                  },
+                });
+              });
             }
           });
         }
@@ -47,21 +59,10 @@ class MegaAgent extends Agent {
         try {
           if (change.type === 'UPSERT' && !openConvs[change.result.convId]) {
             const { convId } = change.result;
-            // new conversation for me
             openConvs[convId] = {};
-            // const message = await dialogflow.eventRequest('WELCOME', convId);
-            // this.publishEvent({
-            //   dialogId: convId,
-            //   event: {
-            //     type: 'ContentEvent',
-            //     contentType: 'text/plain',
-            //     message: message.result.fulfillment.speech,
-            //   },
-            // });
-            // TODO: Get last Sequinse.
-            const lastSeq = await agentService.lastSeq(this.transport.configuration, convId);
-            log.info(lastSeq, 'lastSeq');
-            this.subscribeMessagingEvents({ fromSeq: lastSeq, dialogId: convId });
+            let lastSeq = await agentService.lastSeq(this.transport.configuration, convId);
+            if (!lastSeq) lastSeq = change.result.lastContentEventNotification.sequence;
+            this.subscribeMessagingEvents({ fromSeq: lastSeq + 1, dialogId: convId });
           } else if (change.type === 'DELETE') {
             delete openConvs[change.result.convId];
           }
