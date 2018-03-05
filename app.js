@@ -1,4 +1,4 @@
-// require('dotenv').config();
+require('dotenv').config();
 const lodash = require('lodash');
 const config = require('./config/config');
 const { log } = require('./config/bunyan');
@@ -40,33 +40,33 @@ megaAgent.on('MegaAgent.ContentEvent', async (contentEvent) => {
           conversationState: 'CLOSE',
         }],
       );
-    } else if (contentEvent.message.startsWith(config.DIALOG_FLOW.eventSymbol)) {
+    } else if (contentEvent.message.startsWith(config.DIALOG_FLOW.eventPrefix)) {
       const eventStr = contentEvent.message
-        .substring(config.DIALOG_FLOW.eventSymbol.length, contentEvent.message.length);
-      const event = await dialogflow.eventRequest('WELCOME', eventStr);
+        .substring(config.DIALOG_FLOW.eventPrefix.length, contentEvent.message.length);
+      const event = await dialogflow.eventRequest(eventStr, contentEvent.dialogId);
       megaAgent.publishEvent({
         dialogId: contentEvent.dialogId,
         event: {
           type: 'ContentEvent',
           contentType: 'text/plain',
-          message: `echo tender sample: ${event.result.fulfillment.speech}`,
+          message: `${event.result.fulfillment.speech}`,
         },
       });
-    } else if (contentEvent.message.startsWith(config.DIALOG_FLOW.skillSymbol)) {
+    } else if (contentEvent.message.startsWith(config.DIALOG_FLOW.skillPrefix)) {
       const skillStr = contentEvent.message
-        .substring(config.DIALOG_FLOW.eventSymbol.length, contentEvent.message.length);
+        .substring(config.DIALOG_FLOW.skillPrefix.length, contentEvent.message.length);
       if (Number.isInteger(Number.parseInt(skillStr, 10))) {
-        const skill = await dialogflow.eventRequest('WELCOME', skillStr);
+        const skill = await dialogflow.eventRequest(skillStr, contentEvent.dialogId);
         megaAgent.publishEvent({
           dialogId: contentEvent.dialogId,
           event: {
             type: 'ContentEvent',
             contentType: 'text/plain',
-            message: `echo tender sample: ${skill.result.fulfillment.speech}`,
+            message: `${skill.result.fulfillment.speech}`,
           },
         });
       } else {
-        console.log(`skill: "${skillStr}" isn't number`);
+        log.error(`skill: "${skillStr}" isn't number`);
       }
     } else if (DFResponse.result.action === '#toBot1') {
       log.info('Change bot to Sample Bot');

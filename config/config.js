@@ -1,5 +1,3 @@
-require('dotenv').config();
-
 const config = {};
 
 config.ENV = process.env.ENV;
@@ -17,8 +15,8 @@ config.LP = {
 
 config.DIALOG_FLOW = {
   token: process.env.DIALOG_FLOW_TOKEN,
-  eventSymbol: '#event ',
-  skillSymbol: '#skill ',
+  eventPrefix: '#event ',
+  skillPrefix: '#skill ',
 };
 
 module.exports = config;
