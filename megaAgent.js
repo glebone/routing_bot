@@ -74,7 +74,7 @@ class MegaAgent extends Agent {
               },
             });
             if (!lastSeq) lastSeq = change.result.lastContentEventNotification.sequence;
-            this.subscribeMessagingEvents({ fromSeq: lastSeq + 1, dialogId: convId });
+            this.subscribeMessagingEvents({ fromSeq: lastSeq, dialogId: convId });
           } else if (change.type === 'DELETE') {
             delete openConvs[change.result.convId];
           }
