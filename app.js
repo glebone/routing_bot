@@ -43,30 +43,30 @@ megaAgent.on('MegaAgent.ContentEvent', async (contentEvent) => {
     } else if (contentEvent.message.startsWith(config.DIALOG_FLOW.eventPrefix)) {
       const eventStr = contentEvent.message
         .substring(config.DIALOG_FLOW.eventPrefix.length, contentEvent.message.length);
-      const event = await dialogflow.eventRequest(eventStr, contentEvent.dialogId);
+      const response = await dialogflow.eventRequest(eventStr, contentEvent.dialogId);
       megaAgent.publishEvent({
         dialogId: contentEvent.dialogId,
         event: {
           type: 'ContentEvent',
           contentType: 'text/plain',
-          message: `${event.result.fulfillment.speech}`,
+          message: response.result.fulfillment.speech,
         },
       });
     } else if (contentEvent.message.startsWith(config.DIALOG_FLOW.skillPrefix)) {
       const skillStr = contentEvent.message
         .substring(config.DIALOG_FLOW.skillPrefix.length, contentEvent.message.length);
       if (Number.isInteger(Number.parseInt(skillStr, 10))) {
-        const skill = await dialogflow.eventRequest(skillStr, contentEvent.dialogId);
+        const response = await dialogflow.eventRequest(skillStr, contentEvent.dialogId);
         megaAgent.publishEvent({
           dialogId: contentEvent.dialogId,
           event: {
             type: 'ContentEvent',
             contentType: 'text/plain',
-            message: `${skill.result.fulfillment.speech}`,
+            message: response.result.fulfillment.speech,
           },
         });
       } else {
-        log.error(`skill: "${skillStr}" isn't number`);
+        log.error(`skill "${skillStr}" isn't a number`);
       }
     } else if (DFResponse.result.action === '#toBot1') {
       log.info('Change bot to Sample Bot');
