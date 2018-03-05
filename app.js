@@ -52,6 +52,18 @@ megaAgent.on('MegaAgent.ContentEvent', async (contentEvent) => {
           message: `echo tender sample: ${event.result.fulfillment.speech}`,
         },
       });
+    } else if (contentEvent.message.startsWith(config.DIALOG_FLOW.skillSymbol)) {
+      const skillStr = contentEvent.message
+        .substring(config.DIALOG_FLOW.eventSymbol.length, contentEvent.message.length);
+      const skill = await dialogflow.eventRequest('WELCOME', skillStr);
+      megaAgent.publishEvent({
+        dialogId: contentEvent.dialogId,
+        event: {
+          type: 'ContentEvent',
+          contentType: 'text/plain',
+          message: `echo tender sample: ${skill.result.fulfillment.speech}`,
+        },
+      });
     } else if (DFResponse.result.action === '#toBot1') {
       log.info('Change bot to Sample Bot');
       updateConversation(
