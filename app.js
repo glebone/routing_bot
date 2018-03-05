@@ -3,8 +3,7 @@ const { log } = require('./config/bunyan');
 const lodash = require('lodash');
 const Agent = require('./megaAgent');
 const tendernessBots = require('./config/tendernesBots');
-const dialogflow = require('./dialogflow');
-
+const dialogflow = require('./services/dialogflowService');
 
 const megaAgent = new Agent({
   accountId: process.env.LP_ACCOUNT_ID,
@@ -30,7 +29,7 @@ megaAgent.on('MegaAgent.ContentEvent', async (contentEvent) => {
   try {
     const DFResponse = await dialogflow.textRequest(
       contentEvent.message,
-      contentEvent.dialogId
+      contentEvent.dialogId,
     );
     if (lodash.isString(contentEvent.message) && contentEvent.message.startsWith('#close')) {
       updateConversation(
@@ -40,7 +39,7 @@ megaAgent.on('MegaAgent.ContentEvent', async (contentEvent) => {
           conversationState: 'CLOSE',
         }],
       );
-    } else if (DFResponse.result.action == '#toBot1') {
+    } else if (DFResponse.result.action === '#toBot1') {
       log.info('Change bot to Sample Bot');
       updateConversation(
         contentEvent.dialogId,
@@ -57,7 +56,7 @@ megaAgent.on('MegaAgent.ContentEvent', async (contentEvent) => {
           },
         ],
       );
-    } else if (DFResponse.result.action == '#toBot2') {
+    } else if (DFResponse.result.action === '#toBot2') {
       log.info('Change bot to Sample Bot');
       updateConversation(
         contentEvent.dialogId,
@@ -80,12 +79,12 @@ megaAgent.on('MegaAgent.ContentEvent', async (contentEvent) => {
         event: {
           type: 'ContentEvent',
           contentType: 'text/plain',
-          message: `Echo from Router Bot: ${DFResponse.result.fulfillment.speech}`,
+          message: `Echo from Mega Bot: ${DFResponse.result.fulfillment.speech}`,
         },
       });
       log.info('Publish Event');
     }
   } catch (err) {
-    consile.log(err);
+    log.error(err);
   }
 });
