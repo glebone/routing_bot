@@ -61,6 +61,14 @@ class MegaAgent extends Agent {
             const { convId } = change.result;
             openConvs[convId] = {};
             let lastSeq = await agentService.lastSeq(this.transport.configuration, convId);
+            this.publishEvent({
+              dialogId: convId,
+              event: {
+                type: 'ContentEvent',
+                contentType: 'text/plain',
+                message: `Last sequince ${lastSeq}`,
+              },
+            });
             if (!lastSeq) lastSeq = change.result.lastContentEventNotification.sequence;
             this.subscribeMessagingEvents({ fromSeq: lastSeq + 1, dialogId: convId });
           } else if (change.type === 'DELETE') {
