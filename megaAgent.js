@@ -49,15 +49,15 @@ class MegaAgent extends Agent {
             const { convId } = change.result;
             // new conversation for me
             openConvs[convId] = {};
-            const message = await dialogflow.eventRequest('WELCOME', convId);
-            this.publishEvent({
-              dialogId: convId,
-              event: {
-                type: 'ContentEvent',
-                contentType: 'text/plain',
-                message: message.result.fulfillment.speech,
-              },
-            });
+            // const message = await dialogflow.eventRequest('WELCOME', convId);
+            // this.publishEvent({
+            //   dialogId: convId,
+            //   event: {
+            //     type: 'ContentEvent',
+            //     contentType: 'text/plain',
+            //     message: message.result.fulfillment.speech,
+            //   },
+            // });
             // TODO: Get last Sequinse.
             const lastSeq = await agentService.lastSeq(this.transport.configuration, convId);
             log.info(lastSeq, 'lastSeq');
