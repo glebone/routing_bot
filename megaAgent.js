@@ -46,6 +46,10 @@ class MegaAgent extends Agent {
                     message: message.result.fulfillment.speech,
                   },
                 });
+                if (!openConvs[convId]) {
+                  openConvs[convId] = {};
+                  this.subscribeMessagingEvents({ fromSeq: 999999, dialogId: convId });
+                }
               });
             }
           });
@@ -66,7 +70,7 @@ class MegaAgent extends Agent {
               event: {
                 type: 'ContentEvent',
                 contentType: 'text/plain',
-                message: `Last sequince ${lastSeq}`,
+                message: `Last sequince from histroy ${lastSeq}`,
               },
             });
             if (!lastSeq) lastSeq = change.result.lastContentEventNotification.sequence;
