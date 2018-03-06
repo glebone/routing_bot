@@ -108,27 +108,31 @@ megaAgent.on('MegaAgent.ContentEvent', async (contentEvent) => {
           },
         ],
       );
-    } else {
-      if (DFResponse.result.messages[0].speech) {
-        megaAgent.publishEvent({
-          dialogId: contentEvent.dialogId,
-          event: {
-            type: 'ContentEvent',
-            contentType: 'text/plain',
-            message: DFResponse.result.messages[0].speech,
-          },
-        }, () => {
-          if (DFResponse.result.messages[1].payload) {
-            megaAgent.publishEvent({
+    } else if (DFResponse.result.fulfillment.messages[0].speech) {
+      megaAgent.publishEvent({
+        dialogId: contentEvent.dialogId,
+        event: {
+          type: 'ContentEvent',
+          contentType: 'text/plain',
+          message: DFResponse.result.fulfillment.messages[0].speech,
+        },
+      }, () => {
+        if (DFResponse.result.fulfillment.messages[1].payload) {
+          // log.info(JSON.stringify(DFResponse.result.fulfillment.messages[1].payload));
+          megaAgent.publishEvent(
+            {
               dialogId: contentEvent.dialogId,
               event: {
                 type: 'RichContentEvent',
                 content: DFResponse.result.fulfillment.messages[1].payload,
               },
-            });
-          }
-        });
-      }
+            },
+            (err) => {
+              if (err) log.error(err);
+            },
+          );
+        }
+      });
     }
   } catch (err) {
     log.error(err);
