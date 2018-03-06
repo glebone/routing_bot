@@ -56,15 +56,21 @@ megaAgent.on('MegaAgent.ContentEvent', async (contentEvent) => {
       const skillStr = contentEvent.message
         .substring(config.DIALOG_FLOW.skillPrefix.length, contentEvent.message.length);
       if (Number.isInteger(Number.parseInt(skillStr, 10))) {
-        const response = await dialogflow.eventRequest(skillStr, contentEvent.dialogId);
-        megaAgent.publishEvent({
-          dialogId: contentEvent.dialogId,
-          event: {
-            type: 'ContentEvent',
-            contentType: 'text/plain',
-            message: response.result.fulfillment.speech,
-          },
-        });
+        updateConversation(
+          contentEvent.dialogId,
+          [
+            {
+              field: 'ParticipantsChange',
+              type: 'REMOVE',
+              role: 'ASSIGNED_AGENT',
+            },
+            {
+              field: 'Skill',
+              type: 'UPDATE',
+              skill: skillStr,
+            },
+          ],
+        );
       } else {
         log.error(`skill "${skillStr}" isn't a number`);
       }

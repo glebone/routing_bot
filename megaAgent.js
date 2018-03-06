@@ -1,6 +1,6 @@
 const { log } = require('./config/bunyan');
 const { Agent } = require('node-agent-sdk');
-const config = require('./config/config');
+// const config = require('./config/config');
 const dialogflow = require('./services/dialogflowService');
 const agentService = require('./services/agentService');
 
@@ -10,7 +10,7 @@ class MegaAgent extends Agent {
     this.conf = conf;
     this.init();
     this.CONTENT_NOTIFICATION = 'MegaAgent.ContentEvent';
-    this.initial = config.LP.initialSkillId;
+    // this.initial = config.LP.initialSkillId;
   }
 
   init() {
