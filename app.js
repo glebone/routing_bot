@@ -25,6 +25,35 @@ function updateConversation(dialogId, updates) {
   });
 }
 
+function handleDialogFlowResponse(DFResponse, contentEvent) {
+  if (DFResponse.result.fulfillment.messages[0].speech) {
+    megaAgent.publishEvent({
+      dialogId: contentEvent.dialogId,
+      event: {
+        type: 'ContentEvent',
+        contentType: 'text/plain',
+        message: DFResponse.result.fulfillment.messages[0].speech,
+      },
+    }, () => {
+      if (DFResponse.result.fulfillment.messages[1].payload) {
+      // log.info(JSON.stringify(DFResponse.result.fulfillment.messages[1].payload));
+        megaAgent.publishEvent(
+          {
+            dialogId: contentEvent.dialogId,
+            event: {
+              type: 'RichContentEvent',
+              content: DFResponse.result.fulfillment.messages[1].payload,
+            },
+          },
+          (err) => {
+            if (err) log.error(err);
+          },
+        );
+      }
+    });
+  }
+}
+
 megaAgent.on('MegaAgent.ContentEvent', async (contentEvent) => {
   log.info('Content Event', contentEvent);
   try {
@@ -44,14 +73,7 @@ megaAgent.on('MegaAgent.ContentEvent', async (contentEvent) => {
       const eventStr = contentEvent.message
         .substring(config.DIALOG_FLOW.eventPrefix.length, contentEvent.message.length);
       const response = await dialogflow.eventRequest(eventStr, contentEvent.dialogId);
-      megaAgent.publishEvent({
-        dialogId: contentEvent.dialogId,
-        event: {
-          type: 'ContentEvent',
-          contentType: 'text/plain',
-          message: response.result.fulfillment.speech,
-        },
-      });
+      handleDialogFlowResponse(response, contentEvent);
     } else if (contentEvent.message.startsWith(config.DIALOG_FLOW.skillPrefix)) {
       const skillStr = contentEvent.message
         .substring(config.DIALOG_FLOW.skillPrefix.length, contentEvent.message.length);
@@ -108,31 +130,8 @@ megaAgent.on('MegaAgent.ContentEvent', async (contentEvent) => {
           },
         ],
       );
-    } else if (DFResponse.result.fulfillment.messages[0].speech) {
-      megaAgent.publishEvent({
-        dialogId: contentEvent.dialogId,
-        event: {
-          type: 'ContentEvent',
-          contentType: 'text/plain',
-          message: DFResponse.result.fulfillment.messages[0].speech,
-        },
-      }, () => {
-        if (DFResponse.result.fulfillment.messages[1].payload) {
-          // log.info(JSON.stringify(DFResponse.result.fulfillment.messages[1].payload));
-          megaAgent.publishEvent(
-            {
-              dialogId: contentEvent.dialogId,
-              event: {
-                type: 'RichContentEvent',
-                content: DFResponse.result.fulfillment.messages[1].payload,
-              },
-            },
-            (err) => {
-              if (err) log.error(err);
-            },
-          );
-        }
-      });
+    } else {
+      handleDialogFlowResponse(DFResponse, contentEvent);
     }
   } catch (err) {
     log.error(err);
