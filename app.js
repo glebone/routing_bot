@@ -109,15 +109,26 @@ megaAgent.on('MegaAgent.ContentEvent', async (contentEvent) => {
         ],
       );
     } else {
-      megaAgent.publishEvent({
-        dialogId: contentEvent.dialogId,
-        event: {
-          type: 'ContentEvent',
-          contentType: 'text/plain',
-          message: `Echo from Mega Bot: ${DFResponse.result.fulfillment.speech}`,
-        },
-      });
-      log.info('Publish Event');
+      if (DFResponse.result.messages[0].speech) {
+        megaAgent.publishEvent({
+          dialogId: contentEvent.dialogId,
+          event: {
+            type: 'ContentEvent',
+            contentType: 'text/plain',
+            message: DFResponse.result.messages[0].speech,
+          },
+        }, () => {
+          if (DFResponse.result.messages[1].payload) {
+            megaAgent.publishEvent({
+              dialogId: contentEvent.dialogId,
+              event: {
+                type: 'RichContentEvent',
+                content: DFResponse.result.fulfillment.messages[1].payload,
+              },
+            });
+          }
+        });
+      }
     }
   } catch (err) {
     log.error(err);
