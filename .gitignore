@@ -69,7 +69,7 @@ ansible_*/*.pem
 
 .vagrant
 Vagrantfile
-config/config.js
+# config/config.js
 config/config.json
 
 #nodemon

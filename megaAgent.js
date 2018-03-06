@@ -1,5 +1,6 @@
 const { log } = require('./config/bunyan');
 const { Agent } = require('node-agent-sdk');
+// const config = require('./config/config');
 const dialogflow = require('./services/dialogflowService');
 const agentService = require('./services/agentService');
 
@@ -9,7 +10,7 @@ class MegaAgent extends Agent {
     this.conf = conf;
     this.init();
     this.CONTENT_NOTIFICATION = 'MegaAgent.ContentEvent';
-    this.initial = process.env.LP_INITIAL_SKILL_ID;
+    // this.initial = config.LP.initialSkillId;
   }
 
   init() {
@@ -65,14 +66,14 @@ class MegaAgent extends Agent {
             const { convId } = change.result;
             openConvs[convId] = {};
             let lastSeq = await agentService.lastSeq(this.transport.configuration, convId);
-            this.publishEvent({
-              dialogId: convId,
-              event: {
-                type: 'ContentEvent',
-                contentType: 'text/plain',
-                message: `Last sequince from histroy ${lastSeq}`,
-              },
-            });
+            // this.publishEvent({
+            //   dialogId: convId,
+            //   event: {
+            //     type: 'ContentEvent',
+            //     contentType: 'text/plain',
+            //     message: `Last sequince from histoкy ${lastSeq}`,
+            //   },
+            // });
             if (!lastSeq) lastSeq = change.result.lastContentEventNotification.sequence;
             this.subscribeMessagingEvents({ fromSeq: lastSeq, dialogId: convId });
           } else if (change.type === 'DELETE') {

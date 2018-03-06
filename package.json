@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js | ./node_modules/.bin/bunyan",
-    "start-nodemon": "nodemon app.js | ./node_modules/.bin/bunyan",
+    "dev": "nodemon app.js | ./node_modules/.bin/bunyan",
     "demonize": "nodemon --exec 'node app.js | ./node_modules/.bin/bunyan'"
   },
   "author": "",
