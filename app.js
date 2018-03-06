@@ -26,7 +26,11 @@ function updateConversation(dialogId, updates) {
 }
 
 function handleDialogFlowResponse(DFResponse, contentEvent) {
-  if (DFResponse.result.fulfillment.messages[0].speech) {
+  if (
+    DFResponse.result.fulfillment.messages &&
+    DFResponse.result.fulfillment.messages[0] &&
+    DFResponse.result.fulfillment.messages[0].speech
+  ) {
     megaAgent.publishEvent({
       dialogId: contentEvent.dialogId,
       event: {
@@ -35,7 +39,7 @@ function handleDialogFlowResponse(DFResponse, contentEvent) {
         message: DFResponse.result.fulfillment.messages[0].speech,
       },
     }, () => {
-      if (DFResponse.result.fulfillment.messages[1].payload) {
+      if (DFResponse.result.fulfillment.messages[1] && DFResponse.result.fulfillment.messages[1].payload) {
       // log.info(JSON.stringify(DFResponse.result.fulfillment.messages[1].payload));
         megaAgent.publishEvent(
           {
