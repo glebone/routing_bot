@@ -9,8 +9,8 @@ config.LP = {
   secret: process.env.LP_AGENT_SECRET,
   accessToken: process.env.LP_AGENT_ACCESS_TOKEN,
   accessTokenSecret: process.env.LP_AGENT_ACCESS_TOKEN_SECRET,
-  mainBotId: process.env.MAIN_BOT_ID,
-  // initialSkillId: process.env.LP_INITIAL_SKILL_ID,
+  getClockInterval: 30000,
+  reconnectDelay: 3000,
 };
 
 config.DIALOG_FLOW = {

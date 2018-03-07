@@ -1,6 +1,6 @@
 const { log } = require('./config/bunyan');
 const { Agent } = require('node-agent-sdk');
-// const config = require('./config/config');
+const config = require('./config/config');
 const dialogflow = require('./services/dialogflowService');
 const agentService = require('./services/agentService');
 
@@ -10,7 +10,6 @@ class MegaAgent extends Agent {
     this.conf = conf;
     this.init();
     this.CONTENT_NOTIFICATION = 'MegaAgent.ContentEvent';
-    // this.initial = config.LP.initialSkillId;
   }
 
   init() {
@@ -24,6 +23,15 @@ class MegaAgent extends Agent {
         convState: ['OPEN'],
       }, () => log.info('subscribed successfully', this.conf.id || ''));
       this.subscribeRoutingTasks({});
+      const ping = () => {
+        this.getClock({}, (err) => {
+          if (err) {
+            log.error('Error on getClock!');
+          }
+        });
+        this.pingTimeoutId = setTimeout(ping, config.GETCLOCK_INTERVAL);
+      };
+      this.pingTimeoutId = setTimeout(ping, config.GETCLOCK_INTERVAL);
     });
 
     // Accept any routingTask (==ring)
@@ -35,8 +43,11 @@ class MegaAgent extends Agent {
               this.updateRingState({
                 ringId: r.ringId,
                 ringState: 'ACCEPTED',
-              }, async (e) => {
-                if (e) log.error(e);
+              }, async (err) => {
+                if (err) {
+                  log.error(err);
+                  return;
+                }
                 const convId = r.ringId.split('_')[0];
                 const message = await dialogflow.eventRequest('WELCOME', convId);
                 this.publishEvent({
@@ -124,7 +135,10 @@ class MegaAgent extends Agent {
     // Tracing
     // this.on('notification', msg => console.log('got message', JSON.stringify(msg)));
     this.on('error', err => log.info('got an error', err));
-    this.on('closed', data => log.info('socket closed', data));
+    this.on('closed', (data) => {
+      clearTimeout(this.pingTimeoutId);
+      log.info('socket closed', data);
+    });
   }
 }
 

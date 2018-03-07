@@ -3,11 +3,9 @@ const { log } = require('../config/bunyan');
 
 const apiaiApp = apiai(process.env.DIALOG_FLOW_TOKEN);
 
-async function textRequest(text, messengerUserId) {
+async function textRequest(text, sessionId) {
   return new Promise((resolve, reject) => {
-    const request = apiaiApp.textRequest(text, {
-      sessionId: messengerUserId,
-    });
+    const request = apiaiApp.textRequest(text, { sessionId });
     request.on('response', (response) => {
       resolve(response);
     });
@@ -19,13 +17,9 @@ async function textRequest(text, messengerUserId) {
   });
 }
 
-async function eventRequest(eventName, sessionId) {
+async function eventRequest(name, sessionId) {
   return new Promise((resolve, reject) => {
-    const event = {
-      name: eventName,
-    };
-    const options = { sessionId };
-    const request = apiaiApp.eventRequest(event, options);
+    const request = apiaiApp.eventRequest({ name }, { sessionId });
     request.on('response', (response) => {
       resolve(response);
     });
