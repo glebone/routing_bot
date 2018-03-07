@@ -29,9 +29,9 @@ class MegaAgent extends Agent {
             log.error('Error on getClock!');
           }
         });
-        this.pingTimeoutId = setTimeout(ping, config.GETCLOCK_INTERVAL);
+        this.pingTimeoutId = setTimeout(ping, config.LP.getClockInterval);
       };
-      this.pingTimeoutId = setTimeout(ping, config.GETCLOCK_INTERVAL);
+      this.pingTimeoutId = setTimeout(ping, config.LP.getClockInterval);
     });
 
     // Accept any routingTask (==ring)
@@ -138,6 +138,9 @@ class MegaAgent extends Agent {
     this.on('closed', (data) => {
       clearTimeout(this.pingTimeoutId);
       log.info('socket closed', data);
+      setTimeout(() => {
+        this.reconnect(false);
+      }, config.LP.reconnectDelay);
     });
   }
 }
