@@ -31,44 +31,65 @@ function transferToSkill(convId, newSkill) {
   });
 }
 
-function handleDialogFlowResponse(response, contentEvent) {
-  if (
+function checkSkillCommand(text, convId) {
+  if (!text.startsWith(config.DIALOG_FLOW.skillPrefix)) {
+    return false;
+  }
+  const skillStr = text.substring(
+    config.DIALOG_FLOW.skillPrefix.length,
+    text.length,
+  );
+  if (Number.isInteger(Number.parseInt(skillStr, 10))) {
+    log.info('Transferring to skill', skillStr);
+    transferToSkill(convId, skillStr);
+  } else {
+    log.error(`Skill '${skillStr}' is not an integer.`);
+  }
+  return true;
+}
+
+function handleDialogFlowResponse(response, convId) {
+  const speech =
     response.result.fulfillment.messages &&
     response.result.fulfillment.messages[0] &&
-    response.result.fulfillment.messages[0].speech
-  ) {
-    megaAgent.publishEvent(
-      {
-        dialogId: contentEvent.dialogId,
-        event: {
-          type: 'ContentEvent',
-          contentType: 'text/plain',
-          message: response.result.fulfillment.messages[0].speech,
-        },
-      },
-      () => {
-        if (
-          response.result.fulfillment.messages[1] &&
-          response.result.fulfillment.messages[1].payload
-        ) {
-          megaAgent.publishEvent(
-            {
-              dialogId: contentEvent.dialogId,
-              event: {
-                type: 'RichContentEvent',
-                content: response.result.fulfillment.messages[1].payload,
-              },
-            },
-            (err) => {
-              if (err) log.error(err);
-            },
-          );
-        }
-      },
-    );
-  } else {
+    response.result.fulfillment.messages[0].speech;
+  if (!speech) {
     log.error("Can't get correct response from dialogflow.");
+    return;
   }
+  if (checkSkillCommand(speech, convId)) {
+    return;
+  }
+  megaAgent.publishEvent(
+    {
+      dialogId: convId,
+      event: {
+        type: 'ContentEvent',
+        contentType: 'text/plain',
+        message: speech,
+      },
+    },
+    () => {
+      const payload =
+          response.result.fulfillment.messages[1] &&
+          response.result.fulfillment.messages[1].payload;
+      if (!payload) {
+        return;
+      }
+      megaAgent.publishEvent(
+        {
+          dialogId: convId,
+          event: {
+            type: 'RichContentEvent',
+            content: payload,
+          },
+        },
+        (err) => {
+          if (err) log.error(err);
+        },
+      );
+    },
+  );
 }
 
 megaAgent.on('MegaAgent.ContentEvent', async (contentEvent) => {
@@ -80,21 +101,10 @@ megaAgent.on('MegaAgent.ContentEvent', async (contentEvent) => {
         contentEvent.message.length,
       );
       const response = await dialogflow.eventRequest(eventStr, contentEvent.dialogId);
-      handleDialogFlowResponse(response, contentEvent);
-    } else if (contentEvent.message.startsWith(config.DIALOG_FLOW.skillPrefix)) {
-      const skillStr = contentEvent.message.substring(
-        config.DIALOG_FLOW.skillPrefix.length,
-        contentEvent.message.length,
-      );
-      if (Number.isInteger(Number.parseInt(skillStr, 10))) {
-        log.info('Transferring to skill', skillStr);
-        transferToSkill(contentEvent.dialogId, skillStr);
-      } else {
-        log.error(`Skill '${skillStr}' is not an integer.`);
-      }
-    } else {
+      handleDialogFlowResponse(response, contentEvent.dialogId);
+    } else if (!checkSkillCommand(contentEvent.message, contentEvent.dialogId)) {
       const response = await dialogflow.textRequest(contentEvent.message, contentEvent.dialogId);
-      handleDialogFlowResponse(response, contentEvent);
+      handleDialogFlowResponse(response, contentEvent.dialogId);
     }
   } catch (err) {
     log.error(err);
